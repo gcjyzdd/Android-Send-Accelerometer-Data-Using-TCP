@@ -22,11 +22,15 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
-public class MainActivity extends AppCompatActivity implements SensorEventListener{
+public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
-    private TextView xText, yText, zText;
+    private TextView xText, yText, zText, ipText, portText;
+    private Button cb;
+
     private Sensor mySensor;
     private SensorManager SM;
+
+    private float[] eventData;
 
     public Socket client;
     public boolean connected;
@@ -37,7 +41,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         setContentView(R.layout.activity_main);
 
         // Create our sensor manager
-        SM = (SensorManager)getSystemService(SENSOR_SERVICE);
+        SM = (SensorManager) getSystemService(SENSOR_SERVICE);
 
         // Accelerometer sensor
         mySensor = SM.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
@@ -46,13 +50,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         //mySensor = SM.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
 
         // Register sensor Listener
-        SM.registerListener(this, mySensor, SensorManager.SENSOR_DELAY_NORMAL);
+        SM.registerListener(this, mySensor, SensorManager.SENSOR_DELAY_GAME);
 
         // Assign TextView
-        xText = (TextView)findViewById(R.id.xText);
-        yText = (TextView)findViewById(R.id.yText);
-        zText = (TextView)findViewById(R.id.zText);
+        xText = (TextView) findViewById(R.id.xText);
+        yText = (TextView) findViewById(R.id.yText);
+        zText = (TextView) findViewById(R.id.zText);
 
+        ipText = findViewById(R.id.ipAddr);
+        portText = findViewById(R.id.portText);
+        cb = findViewById(R.id.connect_button);
+
+        eventData = new float[3];
         connected = false;
     }
 
@@ -63,17 +72,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         yText.setText("Y: " + event.values[1]);
         zText.setText("Z: " + event.values[2]);
 
-        try {
-            if(connected){
-                PrintWriter writer = new PrintWriter(client.getOutputStream());
-                writer.print(event.values[0]);
-                writer.print(event.values[1]);
-                writer.print(event.values[2]);
-                writer.close();
-            }
-        } catch (IOException e){
-            e.printStackTrace();
+        eventData[0] = event.values[0];
+        eventData[1] = event.values[1];
+        eventData[2] = event.values[2];
+
+        if (connected) {
+            Thread send_data = new Thread(new SendData());
+            send_data.start();
         }
+
     }
 
     @Override
@@ -82,32 +89,46 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
-    class SartClient implements Runnable{
+    class StartClient implements Runnable {
 
         @Override
         public void run() {
+            String ip_addr = ipText.getText().toString();
+            int Port = Integer.parseInt(portText.getText().toString());
 
+            try {
+                client = new Socket(ip_addr, Port);
+                //client = new Socket("192.168.2.19", 31007);
+                connected = true;
+            } catch (IOException e) {
+                //cb.setText("Failed!");
+                e.printStackTrace();
+            }
         }
     }
+
+    class SendData implements Runnable {
+        @Override
+        public void run() {
+            try {
+                PrintWriter writer = new PrintWriter(client.getOutputStream());
+                writer.print(eventData[0]);
+                writer.print(eventData[1]);
+                writer.print(eventData[2]);
+                writer.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     /**
      * Connect to a TCP server
-     * */
-    public void connectToSever(View view)
-    {
-        EditText text_ip = findViewById(R.id.ipAddr);
-        EditText text_port = findViewById(R.id.portText);
-        String ip_addr = text_ip.getText().toString();
-        int Port = Integer.parseInt(text_port.getText().toString());
-
-        try {
-            //client = new Socket(ip_addr, Port);
-            client = new Socket("192.168.2.19", 31007);
-            connected = true;
-            Button cb = findViewById(R.id.connect_button);
-            cb.setText("Succed!");
-        } catch (IOException e){
-            e.printStackTrace();
-        }
+     */
+    public void connectToSever(View view) {
+        Thread start_client = new Thread(new StartClient());
+        start_client.start();
+        cb.setText("Succed!");
     }
 
 }
