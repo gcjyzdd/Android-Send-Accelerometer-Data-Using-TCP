@@ -11,12 +11,14 @@ import android.hardware.SensorManager;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.view.View;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
@@ -26,11 +28,8 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     private Sensor mySensor;
     private SensorManager SM;
 
-    private ServerSocket serverSocket;
-    Handler UIHandler;
-    Thread Thread1 = null;
-    private EditText EDITTEXT;
-    public static final int PORT = 31005;
+    public Socket client;
+    public boolean connected;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -54,12 +53,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         yText = (TextView)findViewById(R.id.yText);
         zText = (TextView)findViewById(R.id.zText);
 
-        EDITTEXT = (EditText)findViewById(R.id.ipAddr);
-        UIHandler = new Handler();
-
-        this.Thread1 = new Thread(new Thread1());
-        this.Thread1.start();
-
+        connected = false;
     }
 
     @Override
@@ -68,6 +62,18 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         xText.setText("X: " + event.values[0]);
         yText.setText("Y: " + event.values[1]);
         zText.setText("Z: " + event.values[2]);
+
+        try {
+            if(connected){
+                PrintWriter writer = new PrintWriter(client.getOutputStream());
+                writer.print(event.values[0]);
+                writer.print(event.values[1]);
+                writer.print(event.values[2]);
+                writer.close();
+            }
+        } catch (IOException e){
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -76,89 +82,32 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
     }
 
+    class SartClient implements Runnable{
+
+        @Override
+        public void run() {
+
+        }
+    }
     /**
      * Connect to a TCP server
      * */
     public void connectToSever(View view)
     {
+        EditText text_ip = findViewById(R.id.ipAddr);
+        EditText text_port = findViewById(R.id.portText);
+        String ip_addr = text_ip.getText().toString();
+        int Port = Integer.parseInt(text_port.getText().toString());
 
-    }
-
-    class Thread1 implements Runnable
-    {
-        public void run()
-        {
-            Socket socket = null;
-            try{
-                serverSocket = new ServerSocket(PORT);
-            }
-            catch (IOException e){
-                e.printStackTrace();
-            }
-            while(!Thread.currentThread().isInterrupted()){
-                try{
-                    socket = serverSocket.accept();
-
-                    Thread2 commThread = new Thread2(socket);
-                    new Thread(commThread).start();
-                    return;
-                } catch (IOException e){
-                    e.printStackTrace();
-                }
-            }
-
+        try {
+            //client = new Socket(ip_addr, Port);
+            client = new Socket("192.168.2.19", 31007);
+            connected = true;
+            Button cb = findViewById(R.id.connect_button);
+            cb.setText("Succed!");
+        } catch (IOException e){
+            e.printStackTrace();
         }
     }
-
-    class Thread2 implements Runnable
-    {
-        private Socket clientSocket;
-        private BufferedReader input;
-
-        public Thread2(Socket clientSocket)
-        {
-            this.clientSocket = clientSocket;
-            try{
-                this.input = new BufferedReader(new InputStreamReader(this.clientSocket.getInputStream()));
-            }catch (IOException e){
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public void run() {
-            while(!Thread.currentThread().isInterrupted()){
-                try{
-                    String read = input.readLine();
-                    if(read!= null)
-                    {
-                        UIHandler.post(new updateUIThread(read));
-                    }
-                    else
-                    {
-                        Thread1 = new Thread(new Thread1());
-                        Thread1.start();
-                        return;
-                    }
-                }catch (IOException e){
-                    e.printStackTrace();
-                }
-            }
-        }
-    }
-
-    class updateUIThread implements Runnable
-    {
-        private String msg;
-
-        public updateUIThread(String str){this.msg = str;}
-
-        @Override
-        public void run() {
-            EDITTEXT.setText(msg);
-        }
-    }
-
-
 
 }
