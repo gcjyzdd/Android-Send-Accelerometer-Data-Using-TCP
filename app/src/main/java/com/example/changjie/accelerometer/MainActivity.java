@@ -22,6 +22,9 @@ import java.io.PrintWriter;
 import java.net.ServerSocket;
 import java.net.Socket;
 
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     private TextView xText, yText, zText, ipText, portText;
@@ -110,12 +113,32 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     class SendData implements Runnable {
         @Override
         public void run() {
+
+            //sendAsString();
+            sendAsBytes();
+        }
+
+        void sendAsString() {
             try {
                 PrintWriter writer = new PrintWriter(client.getOutputStream());
                 writer.print(eventData[0]);
                 writer.print(eventData[1]);
                 writer.print(eventData[2]);
                 writer.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        void sendAsBytes() {
+            try {
+                byte byteArray[] = new byte[12];
+                ByteBuffer bbuffer = ByteBuffer.wrap(byteArray);
+
+                FloatBuffer buffer = bbuffer.asFloatBuffer();
+                buffer.put(eventData);
+
+                client.getOutputStream().write(byteArray, 0, 12);
             } catch (IOException e) {
                 e.printStackTrace();
             }
