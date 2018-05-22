@@ -32,8 +32,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:onClick="connectToSever"
-        android:paddingTop="16dp"
-        android:text="Connect" />
+        android:layout_marginTop="16dp"
+        android:padding="16dp"
+        android:text="Connect"
+        android:textSize="24sp"/>
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -66,8 +68,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp"
-        >
+        android:padding="8dp" >
 
         <TextView
             android:id="@+id/xText"
@@ -92,5 +93,18 @@
 
     </LinearLayout>
 
-
+    <Button
+        android:id="@+id/btn_manual"
+        android:layout_width="200dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="48dp"
+        android:background="@android:color/holo_green_dark"
+        android:fontFamily="sans-serif"
+        android:onClick="manualAutomated"
+        android:text="Automated"
+        android:textSize="24sp"
+        android:textColor="@android:color/white"
+        android:textStyle="bold"
+        android:paddingTop="16dp"
+        android:paddingBottom="16dp"/>
 </LinearLayout>

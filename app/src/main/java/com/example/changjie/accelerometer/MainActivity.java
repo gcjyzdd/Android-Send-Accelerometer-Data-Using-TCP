@@ -28,7 +28,7 @@ import java.nio.FloatBuffer;
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     private TextView xText, yText, zText, ipText, portText;
-    private Button cb;
+    private Button cb, ma;
 
     private Sensor mySensor;
     private SensorManager SM;
@@ -38,6 +38,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public Socket client;
     public boolean connected;
 
+    private float manual;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -63,9 +64,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         ipText = findViewById(R.id.ipAddr);
         portText = findViewById(R.id.portText);
         cb = findViewById(R.id.connect_button);
+        ma = findViewById(R.id.btn_manual);
 
-        eventData = new float[3];
+        eventData = new float[4];
         connected = false;
+
+        manual = 0;
     }
 
     @Override
@@ -78,10 +82,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         eventData[0] = event.values[0];
         eventData[1] = event.values[1];
         eventData[2] = event.values[2];
+        eventData[3] = manual;
 
         if (connected) {
+            cb.setText("Succed!");
             Thread send_data = new Thread(new SendData());
             send_data.start();
+        }else
+        {
+            cb.setText("Connect");
         }
 
     }
@@ -124,6 +133,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 writer.print(eventData[0]);
                 writer.print(eventData[1]);
                 writer.print(eventData[2]);
+                writer.print(eventData[3]);
                 writer.flush();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -132,13 +142,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         void sendAsBytes() {
             try {
-                byte byteArray[] = new byte[12];
+                byte byteArray[] = new byte[16];
                 ByteBuffer bbuffer = ByteBuffer.wrap(byteArray);
 
                 FloatBuffer buffer = bbuffer.asFloatBuffer();
                 buffer.put(eventData);
 
-                client.getOutputStream().write(byteArray, 0, 12);
+                client.getOutputStream().write(byteArray, 0, 16);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -151,7 +161,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void connectToSever(View view) {
         Thread start_client = new Thread(new StartClient());
         start_client.start();
-        cb.setText("Succed!");
     }
 
+    /**
+     * Update control method
+     */
+    public void manualAutomated(View view)
+    {
+        manual = (manual + 1) % 2;
+
+        if (manual<0.5)
+        {
+            ma.setText("Automated");
+            ma.setBackgroundColor(0xFF748C08);//"@android:color/holo_green_dark"
+        }
+        else{
+            ma.setText("Manual");
+            ma.setBackgroundColor(0xFFCC0000);
+        }
+    }
 }
