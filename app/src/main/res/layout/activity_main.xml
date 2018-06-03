@@ -107,4 +107,41 @@
         android:textStyle="bold"
         android:paddingTop="16dp"
         android:paddingBottom="16dp"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="48dp">
+
+        <Button
+            android:id="@+id/btn_left"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:background="@android:color/holo_green_dark"
+            android:fontFamily="sans-serif"
+            android:onClick="activeLeft"
+            android:text="Left"
+            android:textSize="24sp"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:layout_marginRight="16dp"/>
+
+        <Button
+            android:id="@+id/btn_right"
+            android:layout_width="0dp"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:background="@android:color/holo_green_dark"
+            android:fontFamily="sans-serif"
+            android:onClick="activateRight"
+            android:text="Right"
+            android:textSize="24sp"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:layout_marginLeft="16dp"/>
+
+    </LinearLayout>
+
 </LinearLayout>
