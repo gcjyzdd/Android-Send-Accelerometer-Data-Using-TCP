@@ -28,7 +28,7 @@ import java.nio.FloatBuffer;
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     private TextView xText, yText, zText, ipText, portText;
-    private Button cb, ma;
+    private Button cb, ma, leftIndicator, rightIndicator;
 
     private Sensor mySensor;
     private SensorManager SM;
@@ -39,6 +39,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public boolean connected;
 
     private float manual;
+    private float LRIndicator;
+
+    private int countTimer;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,10 +70,15 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         cb = findViewById(R.id.connect_button);
         ma = findViewById(R.id.btn_manual);
 
-        eventData = new float[4];
+        eventData = new float[5];
         connected = false;
 
         manual = 0;
+        LRIndicator = 0;
+        countTimer = 0;
+
+        leftIndicator = findViewById(R.id.btn_left);
+        rightIndicator = findViewById(R.id.btn_right);
     }
 
     @Override
@@ -83,16 +92,23 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         eventData[1] = event.values[1];
         eventData[2] = event.values[2];
         eventData[3] = manual;
+        eventData[4] = LRIndicator;
 
         if (connected) {
             cb.setText("Succed!");
             Thread send_data = new Thread(new SendData());
             send_data.start();
-        }else
-        {
+        } else {
             cb.setText("Connect");
         }
 
+        if (countTimer > 0) {
+            countTimer -= 1;
+            if (countTimer == 0) {
+                leftIndicator.setBackgroundColor(0xFF748C08);
+                rightIndicator.setBackgroundColor(0xFF748C08);
+            }
+        }
     }
 
     @Override
@@ -134,6 +150,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 writer.print(eventData[1]);
                 writer.print(eventData[2]);
                 writer.print(eventData[3]);
+                writer.print(eventData[4]);
                 writer.flush();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -142,13 +159,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         void sendAsBytes() {
             try {
-                byte byteArray[] = new byte[16];
+                byte byteArray[] = new byte[20];
                 ByteBuffer bbuffer = ByteBuffer.wrap(byteArray);
 
                 FloatBuffer buffer = bbuffer.asFloatBuffer();
                 buffer.put(eventData);
 
-                client.getOutputStream().write(byteArray, 0, 16);
+                client.getOutputStream().write(byteArray, 0, 20);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -166,18 +183,33 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     /**
      * Update control method
      */
-    public void manualAutomated(View view)
-    {
+    public void manualAutomated(View view) {
         manual = (manual + 1) % 2;
 
-        if (manual<0.5)
-        {
+        if (manual < 0.5) {
             ma.setText("Automated");
             ma.setBackgroundColor(0xFF748C08);//"@android:color/holo_green_dark"
-        }
-        else{
+        } else {
             ma.setText("Manual");
             ma.setBackgroundColor(0xFFCC0000);
         }
+    }
+
+    /**
+     * Activate left indicator
+     */
+    public void activeLeft(View view) {
+        LRIndicator = 1;
+        countTimer = 30 * 2;
+        leftIndicator.setBackgroundColor(0xFFCC0000);
+    }
+
+    /**
+     * Activate right indicator
+     */
+    public void activateRight(View view) {
+        LRIndicator = -1;
+        countTimer = 30 * 2;
+        rightIndicator.setBackgroundColor(0xFFCC0000);
     }
 }
