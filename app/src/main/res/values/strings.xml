@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Accelerometer</string>
+    <string name="ip_addr">192.168.2.19</string>
+    <string name="port_no">31006</string>
 </resources>

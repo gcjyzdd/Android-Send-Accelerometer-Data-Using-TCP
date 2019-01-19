@@ -28,15 +28,20 @@ import java.nio.FloatBuffer;
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     private TextView xText, yText, zText, ipText, portText;
+    private TextView rollText, pitchText, yawText;
+
     private Button cb, ma, leftIndicator, rightIndicator;
 
     private Sensor mySensor;
+    private Sensor mRotationVectorSensor;
     private SensorManager SM;
 
     private float[] eventData;
 
     public Socket client;
     public boolean connected;
+    public static final int DATA_SIZE = 9;
+    public static final int ROT_DATA_START = 5;
 
     private float manual;
     private float LRIndicator;
@@ -55,10 +60,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         mySensor = SM.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
 
         // Rotation Sensor
-        //mySensor = SM.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
+        mRotationVectorSensor = SM.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
 
-        // Register sensor Listener
-        SM.registerListener(this, mySensor, SensorManager.SENSOR_DELAY_GAME);
+        startSensors();
 
         // Assign TextView
         xText = (TextView) findViewById(R.id.xText);
@@ -70,7 +74,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         cb = findViewById(R.id.connect_button);
         ma = findViewById(R.id.btn_manual);
 
-        eventData = new float[5];
+        eventData = new float[DATA_SIZE];
         connected = false;
 
         manual = 0;
@@ -81,33 +85,69 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         rightIndicator = findViewById(R.id.btn_right);
     }
 
+    public void startSensors() {
+        // Register sensor Listener; enable our sensor when the activity is resumed
+        // ask for 20 ms updates.
+        SM.registerListener(this, mySensor, 50000/*SensorManager.SENSOR_DELAY_GAME*/);
+        SM.registerListener(this, mRotationVectorSensor, 50000/*SensorManager.SENSOR_DELAY_GAME*/);
+    }
+
+    public void stopSensors() {
+        // make sure to turn our sensor off when the activity is paused
+        SM.unregisterListener(this);
+    }
+
+    public void updateTextView() {
+        xText.setText("X: " + String.format("%.02f",eventData[0]) );
+        yText.setText("Y: " + String.format("%.02f",eventData[1]));
+        zText.setText("Z: " + String.format("%.02f",eventData[2]));
+    }
+
+    @Override
+    protected void onResume() {
+        // Ideally a game should implement onResume() and onPause()
+        // to take appropriate action when the activity looses focus
+        super.onResume();
+        startSensors();
+    }
+
+    @Override
+    protected void onPause() {
+        // Ideally a game should implement onResume() and onPause()
+        // to take appropriate action when the activity looses focus
+        super.onPause();
+        stopSensors();
+    }
+
     @Override
     public void onSensorChanged(SensorEvent event) {
-
-        xText.setText("X: " + event.values[0]);
-        yText.setText("Y: " + event.values[1]);
-        zText.setText("Z: " + event.values[2]);
-
-        eventData[0] = event.values[0];
-        eventData[1] = event.values[1];
-        eventData[2] = event.values[2];
-        eventData[3] = manual;
-        eventData[4] = LRIndicator;
-
-        if (connected) {
-            cb.setText("Succed!");
-            Thread send_data = new Thread(new SendData());
-            send_data.start();
-        } else {
-            cb.setText("Connect");
-        }
-
-        if (countTimer > 0) {
-            countTimer -= 1;
-            if (countTimer == 0) {
-                leftIndicator.setBackgroundColor(0xFF748C08);
-                rightIndicator.setBackgroundColor(0xFF748C08);
+        // we received a sensor event. it is a good practice to check
+        // that we received the proper event
+        if (event.sensor.getType() == Sensor.TYPE_ACCELEROMETER) {
+            eventData[0] = event.values[0];
+            eventData[1] = event.values[1];
+            eventData[2] = event.values[2];
+            eventData[3] = manual;
+            eventData[4] = LRIndicator;
+            updateTextView();
+            if (connected) {
+                cb.setText("Connected!");
+                Thread send_data = new Thread(new SendData());
+                send_data.start();
+            } else {
+                cb.setText("Connect");
             }
+
+            if (countTimer > 0) {
+                countTimer -= 1;
+                if (countTimer == 0) {
+                    leftIndicator.setBackgroundColor(getResources().getColor(R.color.colorIndicatorDefault));
+                    rightIndicator.setBackgroundColor(getResources().getColor(R.color.colorIndicatorDefault));
+                }
+            }
+        } else if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
+            for (int i = 0; i < 4; i++)
+                eventData[ROT_DATA_START + i] = event.values[i];
         }
     }
 
@@ -146,11 +186,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         void sendAsString() {
             try {
                 PrintWriter writer = new PrintWriter(client.getOutputStream());
-                writer.print(eventData[0]);
-                writer.print(eventData[1]);
-                writer.print(eventData[2]);
-                writer.print(eventData[3]);
-                writer.print(eventData[4]);
+                for (int i = 0; i < DATA_SIZE; i++) {
+                    writer.print(eventData[i]);
+                }
                 writer.flush();
             } catch (IOException e) {
                 e.printStackTrace();
@@ -159,13 +197,13 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
 
         void sendAsBytes() {
             try {
-                byte byteArray[] = new byte[20];
+                byte byteArray[] = new byte[4 * DATA_SIZE];
                 ByteBuffer bbuffer = ByteBuffer.wrap(byteArray);
 
                 FloatBuffer buffer = bbuffer.asFloatBuffer();
                 buffer.put(eventData);
 
-                client.getOutputStream().write(byteArray, 0, 20);
+                client.getOutputStream().write(byteArray, 0, 4 * DATA_SIZE);
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -201,7 +239,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void activeLeft(View view) {
         LRIndicator = 1;
         countTimer = 30 * 2;
-        leftIndicator.setBackgroundColor(0xFFCC0000);
+        leftIndicator.setBackgroundColor(getResources().getColor(R.color.colorIndicatorActive));
     }
 
     /**
@@ -210,6 +248,6 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void activateRight(View view) {
         LRIndicator = -1;
         countTimer = 30 * 2;
-        rightIndicator.setBackgroundColor(0xFFCC0000);
+        rightIndicator.setBackgroundColor(getResources().getColor(R.color.colorIndicatorActive));
     }
 }
