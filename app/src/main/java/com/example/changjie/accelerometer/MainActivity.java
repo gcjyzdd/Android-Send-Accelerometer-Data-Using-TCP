@@ -28,20 +28,25 @@ import java.nio.FloatBuffer;
 public class MainActivity extends AppCompatActivity implements SensorEventListener {
 
     private TextView xText, yText, zText, ipText, portText;
-    private TextView rollText, pitchText, yawText;
+    private TextView axText, ayText, azText;
 
     private Button cb, ma, leftIndicator, rightIndicator;
 
+    private float timestamp, dT;
+
     private Sensor mySensor;
     private Sensor mRotationVectorSensor;
+    private Sensor mLinearAcc;
     private SensorManager SM;
 
     private float[] eventData;
 
     public Socket client;
     public boolean connected;
-    public static final int DATA_SIZE = 9;
+    public static final int SENSOR_FREQ = 30;
+    public static final int DATA_SIZE = 13; //3+1+1+4+4
     public static final int ROT_DATA_START = 5;
+    public static final int LA_DATA_START = 5 + 4;
 
     private float manual;
     private float LRIndicator;
@@ -53,6 +58,9 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        timestamp = 0;
+        dT = 0;
+
         // Create our sensor manager
         SM = (SensorManager) getSystemService(SENSOR_SERVICE);
 
@@ -62,12 +70,19 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         // Rotation Sensor
         mRotationVectorSensor = SM.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR);
 
+        // Linear accelerometer
+        mLinearAcc = SM.getDefaultSensor(Sensor.TYPE_LINEAR_ACCELERATION);
+
         startSensors();
 
         // Assign TextView
         xText = (TextView) findViewById(R.id.xText);
         yText = (TextView) findViewById(R.id.yText);
         zText = (TextView) findViewById(R.id.zText);
+
+        axText = (TextView) findViewById(R.id.axText);
+        ayText = (TextView) findViewById(R.id.ayText);
+        azText = (TextView) findViewById(R.id.azText);
 
         ipText = findViewById(R.id.ipAddr);
         portText = findViewById(R.id.portText);
@@ -88,8 +103,10 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     public void startSensors() {
         // Register sensor Listener; enable our sensor when the activity is resumed
         // ask for 20 ms updates.
-        SM.registerListener(this, mySensor, 50000/*SensorManager.SENSOR_DELAY_GAME*/);
-        SM.registerListener(this, mRotationVectorSensor, 50000/*SensorManager.SENSOR_DELAY_GAME*/);
+        int dt = (int) (1e6 / SENSOR_FREQ);
+        SM.registerListener(this, mySensor, dt/*SensorManager.SENSOR_DELAY_GAME*/);
+        SM.registerListener(this, mRotationVectorSensor, dt/*SensorManager.SENSOR_DELAY_GAME*/);
+        SM.registerListener(this, mLinearAcc, dt);
     }
 
     public void stopSensors() {
@@ -98,9 +115,12 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
     }
 
     public void updateTextView() {
-        xText.setText("X: " + String.format("%.02f",eventData[0]) );
-        yText.setText("Y: " + String.format("%.02f",eventData[1]));
-        zText.setText("Z: " + String.format("%.02f",eventData[2]));
+        xText.setText("X: " + String.format("%.02f", eventData[0]));
+        yText.setText("Y: " + String.format("%.02f", eventData[1]));
+        zText.setText("Z: " + String.format("%.02f", eventData[2]));
+        axText.setText("AX: " + String.format("%.02f", eventData[LA_DATA_START + 0]));
+        ayText.setText("AY: " + String.format("%.02f", eventData[LA_DATA_START + 1]));
+        azText.setText("AZ: " + String.format("%.02f", eventData[LA_DATA_START + 2]));
     }
 
     @Override
@@ -148,6 +168,16 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
         } else if (event.sensor.getType() == Sensor.TYPE_ROTATION_VECTOR) {
             for (int i = 0; i < 4; i++)
                 eventData[ROT_DATA_START + i] = event.values[i];
+        } else if (event.sensor.getType() == Sensor.TYPE_LINEAR_ACCELERATION) {
+            if (timestamp != 0) {
+                dT = (event.timestamp - timestamp);
+                int i = 0;
+                for (; i < 3; i++) {
+                    eventData[LA_DATA_START + i] = event.values[i];
+                }
+                eventData[LA_DATA_START + i] = dT;
+            }
+            timestamp = event.timestamp;
         }
     }
 
@@ -192,6 +222,7 @@ public class MainActivity extends AppCompatActivity implements SensorEventListen
                 writer.flush();
             } catch (IOException e) {
                 e.printStackTrace();
+                connected = false;
             }
         }
 

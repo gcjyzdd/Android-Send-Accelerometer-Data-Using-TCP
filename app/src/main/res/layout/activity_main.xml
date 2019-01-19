@@ -17,7 +17,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:autofillHints=""
-            android:inputType="text"
+            android:inputType="number"
             android:text="@string/ip_addr" />
 
         <EditText
@@ -33,18 +33,18 @@
         android:id="@+id/connect_button"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:onClick="connectToSever"
         android:layout_marginTop="16dp"
+        android:onClick="connectToSever"
         android:padding="16dp"
         android:text="Connect"
-        android:textSize="24sp"/>
+        android:textSize="24sp" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:layout_marginTop="32dp"
         android:orientation="horizontal"
-        android:padding="8dp"
-        android:layout_marginTop="32dp">
+        android:padding="8dp">
 
         <TextView
             android:layout_width="0dp"
@@ -70,7 +70,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp" >
+        android:padding="8dp">
 
         <TextView
             android:id="@+id/xText"
@@ -99,24 +99,24 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
-        android:padding="8dp" >
+        android:padding="8dp">
 
         <TextView
-            android:id="@+id/rollText"
+            android:id="@+id/axText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="0" />
 
         <TextView
-            android:id="@+id/pitchText"
+            android:id="@+id/ayText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="0" />
 
         <TextView
-            android:id="@+id/yawText"
+            android:id="@+id/azText"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
@@ -132,46 +132,46 @@
         android:background="@android:color/holo_green_dark"
         android:fontFamily="sans-serif"
         android:onClick="manualAutomated"
-        android:text="Automated"
-        android:textSize="24sp"
-        android:textColor="@android:color/white"
-        android:textStyle="bold"
         android:paddingTop="16dp"
-        android:paddingBottom="16dp"/>
+        android:paddingBottom="16dp"
+        android:text="Automated"
+        android:textColor="@android:color/white"
+        android:textSize="24sp"
+        android:textStyle="bold" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="horizontal"
-        android:layout_marginTop="48dp">
+        android:layout_marginTop="48dp"
+        android:orientation="horizontal">
 
         <Button
             android:id="@+id/btn_left"
             android:layout_width="0dp"
-            android:layout_weight="1"
             android:layout_height="wrap_content"
+            android:layout_marginRight="16dp"
+            android:layout_weight="1"
             android:background="@android:color/holo_green_dark"
             android:fontFamily="sans-serif"
             android:onClick="activeLeft"
             android:text="Left"
-            android:textSize="24sp"
             android:textColor="@android:color/white"
-            android:textStyle="bold"
-            android:layout_marginRight="16dp"/>
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
         <Button
             android:id="@+id/btn_right"
             android:layout_width="0dp"
-            android:layout_weight="1"
             android:layout_height="wrap_content"
+            android:layout_marginLeft="16dp"
+            android:layout_weight="1"
             android:background="@android:color/holo_green_dark"
             android:fontFamily="sans-serif"
             android:onClick="activateRight"
             android:text="Right"
-            android:textSize="24sp"
             android:textColor="@android:color/white"
-            android:textStyle="bold"
-            android:layout_marginLeft="16dp"/>
+            android:textSize="24sp"
+            android:textStyle="bold" />
 
     </LinearLayout>
 
